@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Directory Tree Generator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      pre {
+        background-color: #f4f4f4;
+        padding: 10px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Directory Tree Generator</h1>
+    <button id="selectDir">Select Directory</button>
+    <button id="saveTree">Save Tree</button>
+    <pre id="output"></pre>
+
+    <script>
+      async function getDirectoryHandle() {
+        return await window.showDirectoryPicker();
+      }
+
+      async function traverseDirectory(dirHandle, prefix = "") {
+        const entries = [];
+        for await (const [name, handle] of dirHandle.entries()) {
+          if (handle.kind === "directory") {
+            entries.push(prefix + "├── " + name + "/");
+            entries.push(...(await traverseDirectory(handle, prefix + "│   ")));
+          } else {
+            entries.push(prefix + "├── " + name);
+          }
+        }
+        return entries;
+      }
+
+      document
+        .getElementById("selectDir")
+        .addEventListener("click", async () => {
+          const dirHandle = await getDirectoryHandle();
+          const output = document.getElementById("output");
+          output.textContent = "Generating tree...";
+
+          const tree = await traverseDirectory(dirHandle);
+          output.textContent = tree.join("\n");
+        });
+
+      document
+        .getElementById("saveTree")
+        .addEventListener("click", async () => {
+          const output = document.getElementById("output").textContent;
+          const handle = await window.showSaveFilePicker({
+            suggestedName: "directory_tree.txt",
+            types: [
+              { description: "Text Files", accept: { "text/plain": [".txt"] } },
+            ],
+          });
+
+          const writable = await handle.createWritable();
+          await writable.write(output);
+          await writable.close();
+          alert("File saved successfully!");
+        });
+    </script>
+  </body>
+</html>
