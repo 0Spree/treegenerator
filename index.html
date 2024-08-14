@@ -31,8 +31,13 @@
         const entries = [];
         for await (const [name, handle] of dirHandle.entries()) {
           if (handle.kind === "directory") {
-            entries.push(prefix + "├── " + name + "/");
-            entries.push(...(await traverseDirectory(handle, prefix + "│   ")));
+            if (name === ".next" || name === "node_modules") {
+              entries.push(prefix + "├── " + name + "/");
+              // Skip further traversal inside these directories
+            } else {
+              entries.push(prefix + "├── " + name + "/");
+              entries.push(...(await traverseDirectory(handle, prefix + "│   ")));
+            }
           } else {
             entries.push(prefix + "├── " + name);
           }
